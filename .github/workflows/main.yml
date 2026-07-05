@@ -4,23 +4,23 @@ on:
   push:
     branches:
       - main
-      - master # تم إضافة master في حال كان مشروعك يرتكز عليه
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. جلب الكود من المستودع
+      # 1. جلب الكود والملف المضغوط من المستودع
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. خطوة تشخيصية لرؤية ما يراه السيرفر فعلياً داخل المجلد
-      - name: Check Visible Files
+      # 2. فك ضغط مشروع الأندرويد تلقائياً داخل السيرفر
+      - name: Unzip Project Files
         run: |
-          echo "=== طباعة الملفات المرفوعة على GitHub ==="
-          ls -la
-          echo "========================================="
+          echo "جاري فك ضغط ملف المشروع..."
+          unzip -q "*.zip" -d extracted_project
+          echo "تم فك الضغط بنجاح!"
 
       # 3. إعداد بيئة جافا
       - name: set up JDK 17
@@ -29,19 +29,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 4. البحث عن مجلد المشروع والبناء
+      # 4. البحث عن مجلد المشروع بعد فكه وبدء البناء
       - name: Find Gradle Project and Build
         run: |
           GRADLE_DIR=$(find . -name "settings.gradle.kts" -exec dirname {} \;)
           if [ -z "$GRADLE_DIR" ]; then
-            echo "خطأ: لم يتم العثور على ملفات إعدادات Gradle في المشروع!"
+            echo "خطأ: لم يتم العثور على ملفات إعدادات Gradle داخل الملف المضغوط!"
             exit 1
           fi
           echo "تم العثور على المشروع في: $GRADLE_DIR"
           cd "$GRADLE_DIR"
           gradle assembleDebug
 
-      # 5. رفع ملف الـ APK
+      # 5. رفع ملف الـ APK النهائي للتحميل
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
