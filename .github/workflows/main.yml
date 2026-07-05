@@ -3,7 +3,8 @@ name: Build Android APK
 on:
   push:
     branches:
-      - main # أو master حسب اسم الفرع لديك
+      - main
+      - master # تم إضافة master في حال كان مشروعك يرتكز عليه
 
 jobs:
   build:
@@ -14,14 +15,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. إعداد بيئة جافا
+      # 2. خطوة تشخيصية لرؤية ما يراه السيرفر فعلياً داخل المجلد
+      - name: Check Visible Files
+        run: |
+          echo "=== طباعة الملفات المرفوعة على GitHub ==="
+          ls -la
+          echo "========================================="
+
+      # 3. إعداد بيئة جافا
       - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. البحث عن المجلد الذي يحتوي على ملف settings.gradle.kts والبناء من داخله
+      # 4. البحث عن مجلد المشروع والبناء
       - name: Find Gradle Project and Build
         run: |
           GRADLE_DIR=$(find . -name "settings.gradle.kts" -exec dirname {} \;)
@@ -29,11 +37,11 @@ jobs:
             echo "خطأ: لم يتم العثور على ملفات إعدادات Gradle في المشروع!"
             exit 1
           fi
-          echo "تم العثور على المشروع في المسار: $GRADLE_DIR"
+          echo "تم العثور على المشروع في: $GRADLE_DIR"
           cd "$GRADLE_DIR"
           gradle assembleDebug
 
-      # 4. رفع ملف الـ APK بعد البناء
+      # 5. رفع ملف الـ APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
